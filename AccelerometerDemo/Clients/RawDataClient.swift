@@ -1,5 +1,5 @@
 //
-//  AccelerometerClient.swift
+//  RawDataClient.swift
 //  AccelerometerDemo
 //
 //  Created by Ondřej Stárek on 11/25/25.
@@ -8,14 +8,14 @@
 import CoreMotion
 import Foundation
 
-public struct AccelerometerClient: Sendable {
+public struct RawDataClient: Sendable {
     public var isAccelerometerAvailable: () -> Bool
     public var start: @Sendable () -> Void
     public var stop: @Sendable () -> Void
-    public var stream: @Sendable () -> AsyncStream<AccelerometerSample>
+    public var stream: @Sendable () -> AsyncStream<RawDataSample>
 }
 
-extension AccelerometerClient {
+extension RawDataClient {
     public static let live = {
         let continuationActor = ContinuationActor()
         let motionManager = CMMotionManager()
@@ -37,7 +37,7 @@ extension AccelerometerClient {
 
                     guard let data else { return }
 
-                    let sample = AccelerometerSample(
+                    let sample = RawDataSample(
                         timestamp: data.timestamp,
                         x: Float((data.acceleration.x * 100).rounded() / 100), // two decimals
                         y: Float((data.acceleration.y * 100).rounded() / 100),
@@ -56,7 +56,7 @@ extension AccelerometerClient {
             },
 
             stream: {
-                AsyncStream(AccelerometerSample.self) { continuation in
+                AsyncStream(RawDataSample.self) { continuation in
                     Task { await continuationActor.setContinuation(continuation) }
 
                     continuation.onTermination = { _ in
@@ -69,15 +69,15 @@ extension AccelerometerClient {
     }()
 }
 
-extension AccelerometerClient {
+extension RawDataClient {
     actor ContinuationActor {
-        private var continuation: AsyncStream<AccelerometerSample>.Continuation?
+        private var continuation: AsyncStream<RawDataSample>.Continuation?
 
-        func setContinuation(_ newContinuation: AsyncStream<AccelerometerSample>.Continuation) {
+        func setContinuation(_ newContinuation: AsyncStream<RawDataSample>.Continuation) {
             continuation = newContinuation
         }
 
-        func yield(_ value: AccelerometerSample) {
+        func yield(_ value: RawDataSample) {
             continuation?.yield(value)
         }
 

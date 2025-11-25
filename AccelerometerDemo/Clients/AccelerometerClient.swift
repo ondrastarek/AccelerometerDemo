@@ -18,7 +18,7 @@ extension AccelerometerClient {
         let buffer = SampleBuffer()
         let batchClient = BatchClient.live(buffer: buffer)
 
-        let pipeline = MotionPipelineActor(
+        let flow = FlowActor(
             rawDataClient: rawDataClient,
             buffer: buffer,
             batchClient: batchClient
@@ -26,16 +26,16 @@ extension AccelerometerClient {
 
         return Self(
             start: {
-                Task { await pipeline.start() }
+                Task { await flow.start() }
             },
             stop: {
-                Task { await pipeline.stop() }
+                Task { await flow.stop() }
             },
             stream: {
                 AsyncStream(RawDataBatch.self) { continuation in
-                    Task { await pipeline.setContinuation(continuation) }
+                    Task { await flow.setContinuation(continuation) }
                     continuation.onTermination = { _ in
-                        Task { await pipeline.finish() }
+                        Task { await flow.finish() }
                     }
                 }
             }
@@ -43,7 +43,7 @@ extension AccelerometerClient {
     }()
 }
 
-private actor MotionPipelineActor {
+private actor FlowActor {
     private let rawDataClient: RawDataClient
     private let buffer: SampleBuffer
     private let batchClient: BatchClient
